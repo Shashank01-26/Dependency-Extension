@@ -3,7 +3,7 @@
   "displayName": "DepScope — Dependency Risk Analyzer",
   "description": "Analyze the health, security, and maintenance risk of your project's dependencies directly in VS Code",
   "version": "1.0.0",
-  "publisher": "depscope",
+  "publisher": "shashank-dev",
   "engines": { "vscode": "^1.85.0" },
   "categories": ["Linters", "Other"],
   "keywords": ["dependencies", "security", "npm", "flutter", "android", "risk"],
