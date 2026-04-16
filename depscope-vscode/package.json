@@ -141,7 +141,8 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run build",
-    "build": "npm run build:ext && npm run build:webview",
+    "build": "npm run build:core && npm run build:ext && npm run build:webview",
+    "build:core": "esbuild ../depscope-core/src/index.ts --bundle --outfile=dist/core/index.js --format=cjs --platform=node --sourcemap",
     "build:ext": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
     "build:webview": "esbuild src/webview/index.tsx --bundle --outfile=dist/webview.js --format=iife --platform=browser --loader:.tsx=tsx --loader:.ts=ts --define:process.env.NODE_ENV='\"production\"' --minify",
     "watch": "npm run build -- --watch",
