@@ -440,10 +440,35 @@ function DetailSidebar({ dep, onClose }: { dep: AnalyzedDependency; onClose: () 
         }}>&times;</button>
       </div>
 
-      <p style={{ fontSize: '11px', color: '#64748b', marginBottom: '12px', fontFamily: "'Fira Code', monospace" }}>
+      <p style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px', fontFamily: "'Fira Code', monospace" }}>
         v{dep.version}
         {dep.isDev && <span style={{ marginLeft: '6px', color: '#475569', background: '#1e2130', padding: '1px 5px', borderRadius: '3px' }}>dev</span>}
       </p>
+
+      {/* Maintainers */}
+      {dep.registryData.maintainerNames && dep.registryData.maintainerNames.length > 0 ? (
+        <div style={{ marginBottom: '12px' }}>
+          <p style={{ fontSize: '10px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
+            {dep.registryData.maintainerNames.length === 1 ? 'Maintainer' : 'Maintainers'}
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+            {dep.registryData.maintainerNames.slice(0, 6).map(m => (
+              <span key={m} style={{
+                fontSize: '11px', color: '#94a3b8',
+                background: '#0d0f14', border: '1px solid #1e2130',
+                borderRadius: '4px', padding: '2px 7px',
+              }}>{m}</span>
+            ))}
+            {dep.registryData.maintainerNames.length > 6 && (
+              <span style={{ fontSize: '11px', color: '#475569' }}>+{dep.registryData.maintainerNames.length - 6} more</span>
+            )}
+          </div>
+        </div>
+      ) : (
+        <p style={{ fontSize: '11px', color: '#475569', marginBottom: '12px' }}>
+          {dep.registryData.maintainers === 1 ? '1 maintainer' : `${dep.registryData.maintainers} maintainers`}
+        </p>
+      )}
 
       <RiskBadge level={dep.riskLevel} score={dep.score.overall} />
 

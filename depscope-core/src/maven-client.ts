@@ -25,7 +25,7 @@ export async function fetchMavenMetadata(groupId: string, artifactId: string): P
   githubUrl: string | null;
 }> {
   const defaultRegistry: RegistryData = {
-    weeklyDownloads: 0, maintainers: 1, lastPublish: new Date(0).toISOString(),
+    weeklyDownloads: 0, maintainers: 1, maintainerNames: [], lastPublish: new Date(0).toISOString(),
     deprecation: null, versions: 1, license: 'Unknown', description: '', homepage: '',
   };
   try {
@@ -41,6 +41,7 @@ export async function fetchMavenMetadata(groupId: string, artifactId: string): P
     const registry: RegistryData = {
       weeklyDownloads: 0,
       maintainers: 1,
+      maintainerNames: [],
       lastPublish: latest.timestamp ? new Date(latest.timestamp).toISOString() : new Date(0).toISOString(),
       deprecation: null,
       versions: allVersions.length || 1,

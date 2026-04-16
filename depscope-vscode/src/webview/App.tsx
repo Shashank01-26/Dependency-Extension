@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { ScanResult, AnalyzedDependency, RiskLevel } from './types';
+import React, { useState, useEffect } from 'react';
+import { ScanResult, AnalyzedDependency, RiskLevel, AiInsightsData, AiInsightsStatus } from './types';
 import ScoreRing from './components/ScoreRing';
 import StatCard from './components/StatCard';
 import DependencyTable from './components/DependencyTable';
@@ -33,15 +33,6 @@ const RISK_BG: Record<RiskLevel, string> = {
   critical: 'rgba(239,68,68,0.1)',
 };
 
-
-export type AiInsightsStatus = 'idle' | 'loading' | 'ready' | 'error';
-
-export interface AiInsightsData {
-  summary: string;
-  riskAnalysis: string;
-  recommendations: string;
-  alternatives: string;
-}
 
 export default function App() {
   const [result, setResult] = useState<ScanResult | null>(null);
@@ -100,9 +91,6 @@ export default function App() {
     vscode.postMessage({ type: 'loadSample' });
   };
 
-  const riskColor = result
-    ? (RISK_COLORS[result.summary.overallRiskLevel as RiskLevel] ?? '#6366f1')
-    : '#6366f1';
 
   return (
     <div style={{ background: '#0d0f14', height: '100vh', color: '#e2e8f0', fontFamily: "'Plus Jakarta Sans', sans-serif", display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>

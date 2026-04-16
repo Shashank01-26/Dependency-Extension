@@ -66,7 +66,7 @@ export async function fetchNpmMetadata(name: string, version: string): Promise<{
   directDeps: string[];
 }> {
   const defaultRegistry: RegistryData = {
-    weeklyDownloads: 0, maintainers: 1, lastPublish: new Date(0).toISOString(),
+    weeklyDownloads: 0, maintainers: 1, maintainerNames: [], lastPublish: new Date(0).toISOString(),
     deprecation: null, versions: 1, license: 'Unknown', description: '', homepage: '',
   };
   try {
@@ -75,9 +75,16 @@ export async function fetchNpmMetadata(name: string, version: string): Promise<{
     const versionData = data.versions?.[latest] || {};
     const times = data.time || {};
 
+    const rawMaintainers: Array<{ name?: string; username?: string; email?: string }> =
+      Array.isArray(data.maintainers) ? data.maintainers : [];
+    const maintainerNames = rawMaintainers
+      .map(m => m.name || m.username || m.email || '')
+      .filter(Boolean);
+
     const registry: RegistryData = {
       weeklyDownloads: 0,
-      maintainers: Array.isArray(data.maintainers) ? data.maintainers.length : 1,
+      maintainers: rawMaintainers.length || 1,
+      maintainerNames,
       lastPublish: times[latest] || times.modified || new Date(0).toISOString(),
       deprecation: versionData.deprecated || null,
       versions: Object.keys(data.versions || {}).length,

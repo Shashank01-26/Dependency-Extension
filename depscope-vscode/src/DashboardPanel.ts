@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as child_process from 'child_process';
 import { ScanResult } from './types';
 
 export class DashboardPanel {
@@ -159,68 +160,38 @@ export class DashboardPanel {
     this._panel.webview.postMessage(loadingMsg);
 
     try {
-    const prompt = buildInsightsPrompt(result);
-    const body = JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        {
-          role: 'system',
-          content:
-            'You are an expert software security auditor specializing in dependency risk analysis. ' +
-            'Provide detailed, actionable insights based on real scan data. Be specific about package names, ' +
-            'versions, CVE IDs, and concrete remediation commands. Return only valid JSON — no markdown fences, no preamble.',
-        },
-        { role: 'user', content: prompt },
-      ],
-      max_tokens: 2048,
-      temperature: 0.2,
-      response_format: { type: 'json_object' },
-    });
+      // Delegate to the core subprocess — same bundle that does the analysis.
+      // Path resolution mirrors AnalysisEngine.runCore: dev workspace first,
+      // then the VSIX-bundled dist/core/index.js (works after `vsce package`).
+      const extFsPath = this.extensionUri.fsPath;
+      let coreScript = path.join(extFsPath, '..', 'depscope-core', 'dist', 'index.js');
+      if (!fs.existsSync(coreScript)) {
+        coreScript = path.join(extFsPath, 'dist', 'core', 'index.js');
+      }
 
-    // Use the built-in https module (always available in VS Code's Node runtime)
-    const https = await import('https');
-    const responseText = await new Promise<string>((resolve, reject) => {
-      const req = https.request(
-        {
-          hostname: 'api.groq.com',
-          path: '/openai/v1/chat/completions',
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${groqApiKey}`,
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(body),
-          },
-        },
-        (res) => {
-          let data = '';
-          res.on('data', (chunk) => (data += chunk));
-          res.on('end', () => {
-            if ((res.statusCode ?? 0) >= 400) {
-              reject(new Error(`Groq API ${res.statusCode}: ${data.slice(0, 300)}`));
-            } else {
-              resolve(data);
-            }
-          });
-        },
-      );
-      req.on('error', reject);
-      req.write(body);
-      req.end();
-    });
+      const ipcResponse = await new Promise<any>((resolve, reject) => {
+        const child = child_process.spawn('node', [coreScript], {
+          stdio: ['pipe', 'pipe', 'pipe'],
+        });
+        let stdout = '';
+        let stderr = '';
+        child.stdout.on('data', (d) => (stdout += d.toString()));
+        child.stderr.on('data', (d) => (stderr += d.toString()));
+        child.on('close', (code) => {
+          if (code !== 0) { reject(new Error(stderr || `Core exited ${code}`)); return; }
+          try { resolve(JSON.parse(stdout)); }
+          catch { reject(new Error('Failed to parse core IPC response')); }
+        });
+        child.on('error', reject);
+        child.stdin.write(JSON.stringify({ type: 'generateInsights', result, groqApiKey }));
+        child.stdin.end();
+      });
 
-    const parsed = JSON.parse(responseText);
-    const content: string = parsed.choices?.[0]?.message?.content ?? '{}';
+      if (!ipcResponse.success) throw new Error(ipcResponse.error || 'Core returned failure');
 
-    let insights: Record<string, string>;
-    try {
-      insights = JSON.parse(content);
-    } catch {
-      insights = { summary: content, riskAnalysis: '', recommendations: '', alternatives: '' };
-    }
-
-    const resultMsg = { type: 'insightsResult', insights };
-    DashboardPanel.pendingInsightsMsg = resultMsg;
-    this._panel.webview.postMessage(resultMsg);
+      const resultMsg = { type: 'insightsResult', insights: ipcResponse.insights };
+      DashboardPanel.pendingInsightsMsg = resultMsg;
+      this._panel.webview.postMessage(resultMsg);
     } catch (err: any) {
       const errMsg = { type: 'insightsError', code: 'api_error', message: err?.message || 'Failed' };
       DashboardPanel.pendingInsightsMsg = errMsg;
@@ -254,64 +225,3 @@ function getNonce(): string {
   return text;
 }
 
-function buildInsightsPrompt(result: ScanResult): string {
-  const { summary, dependencies, metadata } = result;
-  const critical = dependencies.filter((d: any) => d.riskLevel === 'critical');
-  const high = dependencies.filter((d: any) => d.riskLevel === 'high');
-  const vulnerable = dependencies.filter((d: any) => d.vulnerabilities?.length > 0);
-  const deprecated = dependencies.filter((d: any) =>
-    d.flags?.some((f: any) => f.type === 'deprecated'),
-  );
-
-  const depLine = (d: any) =>
-    `- ${d.name}@${d.version} | score=${d.score?.overall ?? '?'}/100` +
-    ` | maintenance=${d.score?.maintenance ?? '?'} security=${d.score?.security ?? '?'}` +
-    ` popularity=${d.score?.popularity ?? '?'}` +
-    ` | maintainers=${d.registryData?.maintainers ?? '?'}` +
-    ` downloads/wk=${d.registryData?.weeklyDownloads?.toLocaleString() ?? '?'}` +
-    ` lastPublish=${d.registryData?.lastPublish ?? '?'}` +
-    ` stars=${d.github?.stars ?? '?'}` +
-    (d.vulnerabilities?.length
-      ? ` | CVEs: ${d.vulnerabilities.map((v: any) => `${v.severity}:${v.cve || 'N/A'} "${v.title}"`).join('; ')}`
-      : '') +
-    (d.flags?.length ? ` | flags: ${d.flags.map((f: any) => f.type).join(',')}` : '');
-
-  return `Analyze this ${metadata.ecosystem} project "${metadata.projectName}" dependency scan.
-
-OVERVIEW
-- Total deps: ${summary.totalDependencies} (${summary.directCount} direct)
-- Overall risk score: ${summary.overallScore}/100 — ${summary.overallRiskLevel.toUpperCase()}
-- Breakdown: critical=${summary.criticalCount} high=${summary.highCount} medium=${summary.mediumCount} low=${summary.lowCount}
-- Known vulnerabilities: ${summary.vulnerabilityCount}
-
-CRITICAL PACKAGES (${critical.length})
-${critical.map(depLine).join('\n') || 'none'}
-
-HIGH-RISK PACKAGES (${high.length > 8 ? 'top 8 shown' : high.length})
-${high.slice(0, 8).map(depLine).join('\n') || 'none'}
-
-PACKAGES WITH KNOWN CVEs (${vulnerable.length})
-${
-    vulnerable
-      .slice(0, 6)
-      .map(
-        (d: any) =>
-          `- ${d.name}@${d.version}: ` +
-          d.vulnerabilities
-            .map((v: any) => `${v.severity.toUpperCase()} ${v.cve || ''} "${v.title}" affects ${v.affectedVersions || '?'}`)
-            .join('; '),
-      )
-      .join('\n') || 'none'
-  }
-
-DEPRECATED PACKAGES (${deprecated.length})
-${deprecated.map((d: any) => `- ${d.name}@${d.version}`).join('\n') || 'none'}
-
-Return ONLY this JSON object (no markdown, no extra keys):
-{
-  "summary": "3–4 paragraph executive summary. Paragraph 1: interpret the ${summary.overallScore}/100 score — what it means in practice for a ${metadata.ecosystem} project. Paragraph 2: call out the most dangerous specific packages by name and explain the compounded risk. Paragraph 3: describe the realistic worst-case exploitation scenario given the vulnerabilities found. Paragraph 4: give an honest overall verdict.",
-  "riskAnalysis": "Per-package deep-dive for every critical and high-risk package. For each: (a) what the package does in one sentence, (b) the exact risk signals (low maintenance score, single maintainer, specific CVE IDs), (c) what an attacker could do if it were compromised, (d) whether the currently installed version is in the affected range. Use numbered entries.",
-  "recommendations": "Prioritized numbered action plan. Each item must include: the exact package name, the precise action (update / replace / audit / pin), the exact CLI command to run (e.g. npm install lodash@4.17.21, flutter pub upgrade provider), the urgency (CRITICAL / HIGH / MEDIUM), and a one-sentence reason. Order by urgency.",
-  "alternatives": "For every deprecated or critically risky package: (a) 1–2 specific maintained drop-in or near-drop-in alternatives, (b) migration effort (trivial / easy / moderate / significant), (c) key API differences to watch out for, (d) install command. Skip packages that have no better alternatives."
-}`;
-}

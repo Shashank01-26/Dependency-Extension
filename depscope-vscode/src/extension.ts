@@ -147,12 +147,34 @@ export function activate(context: vscode.ExtensionContext): void {
 
 async function findManifestFile(): Promise<string | undefined> {
   const patterns = ['**/package.json', '**/pubspec.yaml', '**/build.gradle', '**/build.gradle.kts'];
-  const excludes = ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**'];
+  const excludeGlob = '{**/node_modules/**,**/.git/**,**/dist/**,**/build/**}';
+
+  // Collect all manifest files across all patterns, preserving order
+  const seen = new Set<string>();
+  const allFiles: vscode.Uri[] = [];
   for (const pattern of patterns) {
-    const files = await vscode.workspace.findFiles(pattern, `{${excludes.join(',')}}`);
-    if (files.length > 0) return files[0].fsPath;
+    const files = await vscode.workspace.findFiles(pattern, excludeGlob);
+    for (const f of files) {
+      if (!seen.has(f.fsPath)) { seen.add(f.fsPath); allFiles.push(f); }
+    }
   }
-  return undefined;
+
+  if (allFiles.length === 0) return undefined;
+  if (allFiles.length === 1) return allFiles[0].fsPath;
+
+  // Multiple manifests — let the user pick
+  const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  const items = allFiles.map(f => {
+    const rel = workspaceRoot ? path.relative(workspaceRoot, f.fsPath) : f.fsPath;
+    return { label: rel, fsPath: f.fsPath };
+  });
+
+  const pick = await vscode.window.showQuickPick(items, {
+    placeHolder: 'Multiple manifest files found — select one to analyze',
+    matchOnDescription: true,
+  });
+
+  return pick?.fsPath;
 }
 
 function generateCsv(result: any): string {

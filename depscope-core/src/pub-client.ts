@@ -26,7 +26,7 @@ export async function fetchPubMetadata(name: string): Promise<{
   directDeps: string[];
 }> {
   const defaultRegistry: RegistryData = {
-    weeklyDownloads: 0, maintainers: 1, lastPublish: new Date(0).toISOString(),
+    weeklyDownloads: 0, maintainers: 1, maintainerNames: [], lastPublish: new Date(0).toISOString(),
     deprecation: null, versions: 1, license: 'Unknown', description: '', homepage: '',
   };
   try {
@@ -35,9 +35,19 @@ export async function fetchPubMetadata(name: string): Promise<{
     const pubspec = data.latest?.pubspec || {};
     const versions = data.versions || [];
 
+    // pub.dev pubspec may carry an authors list (legacy field)
+    const rawAuthors: string[] = Array.isArray(pubspec.authors)
+      ? pubspec.authors
+      : pubspec.author ? [pubspec.author] : [];
+    // Strip email addresses — keep just the name part if present
+    const maintainerNames = rawAuthors
+      .map((a: string) => a.replace(/<[^>]+>/, '').trim())
+      .filter(Boolean);
+
     const registry: RegistryData = {
       weeklyDownloads: Math.floor((data.popularity || 0) * 10000),
-      maintainers: 1,
+      maintainers: maintainerNames.length || 1,
+      maintainerNames,
       lastPublish: data.latest?.published || new Date(0).toISOString(),
       deprecation: pubspec.deprecated ? 'This package is deprecated' : null,
       versions: versions.length,

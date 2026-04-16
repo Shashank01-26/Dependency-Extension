@@ -1,4 +1,5 @@
 import { analyze } from './analyzer.js';
+import { generateAiInsights } from './ai-insights.js';
 import { IpcRequest, IpcResponse } from './types/index.js';
 import * as readline from 'readline';
 
@@ -17,6 +18,15 @@ import * as readline from 'readline';
 async function handleRequest(request: IpcRequest): Promise<IpcResponse> {
   if (request.type === 'ping') {
     return { success: true };
+  }
+  if (request.type === 'generateInsights') {
+    if (!request.result) return { success: false, error: 'Missing result payload' };
+    try {
+      const insights = await generateAiInsights(request.result, request.groqApiKey);
+      return { success: true, insights };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
   }
   try {
     const result = await analyze(request);

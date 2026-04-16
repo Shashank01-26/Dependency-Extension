@@ -22,6 +22,7 @@ export interface GitHubData {
 export interface RegistryData {
   weeklyDownloads: number;
   maintainers: number;
+  maintainerNames: string[];
   lastPublish: string;
   deprecation: string | null;
   versions: number;
@@ -55,6 +56,15 @@ export interface AnalyzedDependency {
   directDeps: string[];
   transitiveCount: number;
   parent?: string;
+}
+
+export type AiInsightsStatus = 'idle' | 'loading' | 'ready' | 'error';
+
+export interface AiInsightsData {
+  summary: string;
+  riskAnalysis: string;
+  recommendations: string;
+  alternatives: string;
 }
 
 export interface ScanResult {

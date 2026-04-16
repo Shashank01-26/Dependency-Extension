@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ScanResult } from '../types';
-import { AiInsightsData, AiInsightsStatus } from '../App';
+import { AiInsightsData, AiInsightsStatus } from '../types';
 
 interface Props {
   result: ScanResult;
@@ -37,8 +37,9 @@ function InlineMd({ text }: { text: string }) {
 }
 
 function MarkdownLite({ text, accentColor }: { text: string; accentColor: string }) {
-  if (!text) return null;
-  const lines = text.split('\n');
+  const safeText = String(text ?? '');
+  if (!safeText) return null;
+  const lines = safeText.split('\n');
   const elements: React.ReactNode[] = [];
 
   lines.forEach((line, i) => {
@@ -167,10 +168,10 @@ export default function InsightsPanel({ result, vscode, aiInsights, aiStatus, ai
   // Stagger card entrance when insights arrive
   useEffect(() => {
     if (aiStatus === 'ready') {
-      setVisible(new Set());
-      CARDS.forEach((_, i) => {
-        setTimeout(() => setVisible(prev => new Set([...prev, i])), i * 100);
-      });
+      const timers = CARDS.map((_, i) =>
+        setTimeout(() => setVisible(prev => new Set([...prev, i])), i * 120)
+      );
+      return () => timers.forEach(clearTimeout);
     }
   }, [aiStatus]);
 
@@ -205,6 +206,15 @@ export default function InsightsPanel({ result, vscode, aiInsights, aiStatus, ai
   }
 
   // ── Ready ─────────────────────────────────────────────────────────────────
+  if (!aiInsights) {
+    return (
+      <div>
+        <AIHeader />
+        <LoadingShimmer />
+      </div>
+    );
+  }
+
   return (
     <div>
       <AIHeader onRegenerate={() => vscode.postMessage({ type: 'requestInsights', result })} />

@@ -27,6 +27,7 @@ export interface GitHubData {
 export interface RegistryData {
   weeklyDownloads: number;
   maintainers: number;
+  maintainerNames: string[];
   lastPublish: string;
   deprecation: string | null;
   versions: number;
@@ -89,8 +90,15 @@ export interface ParsedDependency {
   isDev: boolean;
 }
 
+export interface AiInsights {
+  summary: string;
+  riskAnalysis: string;
+  recommendations: string;
+  alternatives: string;
+}
+
 export interface IpcRequest {
-  type: 'analyze' | 'ping';
+  type: 'analyze' | 'ping' | 'generateInsights';
   ecosystem?: Ecosystem;
   dependencies?: ParsedDependency[];
   projectName?: string;
@@ -98,10 +106,13 @@ export interface IpcRequest {
   githubToken?: string;
   maxDepth?: number;
   concurrency?: number;
+  /** Populated for type === 'generateInsights' */
+  result?: ScanResult;
 }
 
 export interface IpcResponse {
   success: boolean;
   result?: ScanResult;
+  insights?: AiInsights;
   error?: string;
 }

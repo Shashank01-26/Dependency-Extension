@@ -21,6 +21,7 @@ function createStubDependency(
   const stubRegistry: RegistryData = {
     weeklyDownloads: 0,
     maintainers: 1,
+    maintainerNames: [],
     lastPublish: new Date().toISOString(),
     deprecation: null,
     versions: 1,
@@ -53,7 +54,7 @@ async function analyzeOneDependency(
   depth = 1,
 ): Promise<AnalyzedDependency> {
   let registryData: RegistryData = {
-    weeklyDownloads: 0, maintainers: 1, lastPublish: new Date(0).toISOString(),
+    weeklyDownloads: 0, maintainers: 1, maintainerNames: [], lastPublish: new Date(0).toISOString(),
     deprecation: null, versions: 1, license: 'Unknown', description: '', homepage: '',
   };
   let githubUrl: string | null = null;
