@@ -118,7 +118,7 @@ export class InstallInterceptor implements vscode.Disposable {
     constructor(private readonly context: vscode.ExtensionContext) {
         this.helperScriptPath = path.join(
             context.extensionPath,
-            'src',
+            'dist',
             'intercept-helper.js',
         );
         this.shimDir  = path.join(os.tmpdir(), 'depscope-bin');

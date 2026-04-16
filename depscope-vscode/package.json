@@ -1,6 +1,6 @@
 {
-  "name": "depscope",
-  "displayName": "DepScope — Dependency Risk Analyzer",
+  "name": "depscope-analyzer",
+  "displayName": "DepScope: Dependency Risk Analyzer",
   "description": "Analyze the health, security, and maintenance risk of your project's dependencies directly in VS Code",
   "version": "1.0.0",
   "publisher": "shashank-dev",
@@ -141,14 +141,15 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run build",
-    "build": "npm run build:core && npm run build:ext && npm run build:webview",
+    "build": "npm run build:core && npm run build:ext && npm run build:webview && npm run build:helper",
     "build:core": "esbuild ../depscope-core/src/index.ts --bundle --outfile=dist/core/index.js --format=cjs --platform=node --sourcemap",
     "build:ext": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
     "build:webview": "esbuild src/webview/index.tsx --bundle --outfile=dist/webview.js --format=iife --platform=browser --loader:.tsx=tsx --loader:.ts=ts --define:process.env.NODE_ENV='\"production\"' --minify",
+    "build:helper": "node -e \"require('fs').copyFileSync('src/intercept-helper.js', 'dist/intercept-helper.js')\"",
     "watch": "npm run build -- --watch",
     "watch:ext": "npm run build:ext -- --watch",
     "watch:webview": "npm run build:webview -- --watch",
-    "package": "vsce package",
+    "package": "vsce package --readme-path MARKETPLACE.md",
     "test": "jest"
   },
   "jest": {
