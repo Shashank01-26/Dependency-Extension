@@ -29,6 +29,7 @@ export interface RegistryData {
   license: string;
   description: string;
   homepage: string;
+  notFound?: boolean;
 }
 
 export interface RiskScore {

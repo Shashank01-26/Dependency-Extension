@@ -31,6 +31,12 @@ export async function fetchPubMetadata(name: string): Promise<{
   };
   try {
     const data = await httpsGet(`https://pub.dev/api/packages/${encodeURIComponent(name)}`);
+
+    // pub.dev returns {"error":"..."}  or a response without `latest` for unknown packages
+    if (data.error || !data.latest) {
+      return { registry: { ...defaultRegistry, notFound: true }, githubUrl: null, directDeps: [] };
+    }
+
     const latest = data.latest?.version || '0.0.0';
     const pubspec = data.latest?.pubspec || {};
     const versions = data.versions || [];

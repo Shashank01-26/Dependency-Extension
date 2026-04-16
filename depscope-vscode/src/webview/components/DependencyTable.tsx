@@ -109,32 +109,69 @@ export default function DependencyTable({ dependencies }: Props) {
                 display: 'grid', gridTemplateColumns: '1fr 140px 110px 100px 1fr', gap: '0',
                 padding: '12px 16px', background: '#0d0f14', cursor: 'pointer', alignItems: 'center',
                 transition: 'background 0.15s',
+                borderLeft: dep.registryData.notFound ? '3px solid #ef444460' : '3px solid transparent',
               }}
               onMouseEnter={e => (e.currentTarget.style.background = '#13151c')}
               onMouseLeave={e => (e.currentTarget.style.background = '#0d0f14')}
             >
               {/* Name */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontFamily: "'Fira Code', monospace", fontSize: '13px', color: '#e2e8f0' }}>{dep.name}</span>
+                <span style={{ fontFamily: "'Fira Code', monospace", fontSize: '13px', color: dep.registryData.notFound ? '#94a3b8' : '#e2e8f0' }}>{dep.name}</span>
                 <span style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#64748b' }}>@{dep.version}</span>
                 {dep.isDev && <span style={{ fontSize: '10px', background: '#1e2130', color: '#94a3b8', padding: '1px 6px', borderRadius: '4px' }}>DEV</span>}
+                {dep.registryData.notFound && (
+                  <span style={{
+                    fontSize: '10px', fontWeight: 700, color: '#ef4444',
+                    background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+                    borderRadius: '4px', padding: '1px 7px', letterSpacing: '0.03em',
+                  }}>NOT FOUND</span>
+                )}
               </div>
               {/* Score */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <RiskBadge level={dep.riskLevel} />
-                <div style={{ flex: 1, height: '4px', background: '#1e2130', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${dep.score.overall}%`, background: riskColor(dep.riskLevel), borderRadius: '2px' }} />
+              {dep.registryData.notFound ? (
+                <span style={{ fontSize: '12px', color: '#475569', fontStyle: 'italic' }}>—</span>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <RiskBadge level={dep.riskLevel} />
+                  <div style={{ flex: 1, height: '4px', background: '#1e2130', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${dep.score.overall}%`, background: riskColor(dep.riskLevel), borderRadius: '2px' }} />
+                  </div>
+                  <span style={{ fontSize: '12px', fontFamily: "'Fira Code', monospace", color: '#94a3b8', minWidth: '28px' }}>{Math.round(dep.score.overall)}</span>
                 </div>
-                <span style={{ fontSize: '12px', fontFamily: "'Fira Code', monospace", color: '#94a3b8', minWidth: '28px' }}>{Math.round(dep.score.overall)}</span>
-              </div>
+              )}
               {/* Downloads */}
-              <span style={{ fontSize: '13px', color: '#94a3b8', fontFamily: "'Fira Code', monospace" }}>{fmt(dep.registryData.weeklyDownloads)}/wk</span>
+              {dep.registryData.notFound ? (
+                <span style={{ fontSize: '12px', color: '#475569', fontStyle: 'italic' }}>—</span>
+              ) : (
+                <span style={{ fontSize: '13px', color: '#94a3b8', fontFamily: "'Fira Code', monospace" }}>{fmt(dep.registryData.weeklyDownloads)}/wk</span>
+              )}
               {/* Maintainers */}
-              <span style={{ fontSize: '13px', color: '#94a3b8' }}>{dep.registryData.maintainers}</span>
+              {dep.registryData.notFound ? (
+                <span style={{ fontSize: '12px', color: '#475569', fontStyle: 'italic' }}>—</span>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  {dep.registryData.maintainerNames?.length > 0 ? (
+                    dep.registryData.maintainerNames.slice(0, 2).map(m => (
+                      <span key={m} style={{ fontSize: '11px', color: '#94a3b8', fontFamily: "'Fira Code', monospace", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '90px' }}>{m}</span>
+                    ))
+                  ) : (
+                    <span style={{ fontSize: '13px', color: '#64748b' }}>{dep.registryData.maintainers}</span>
+                  )}
+                  {dep.registryData.maintainerNames?.length > 2 && (
+                    <span style={{ fontSize: '10px', color: '#475569' }}>+{dep.registryData.maintainerNames.length - 2} more</span>
+                  )}
+                </div>
+              )}
               {/* Flags */}
               <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
-                {dep.flags.slice(0, 3).map(f => <FlagPill key={f.type} flag={f} />)}
-                {dep.flags.length > 3 && <span style={{ fontSize: '11px', color: '#64748b' }}>+{dep.flags.length - 3} more</span>}
+                {dep.registryData.notFound ? (
+                  <span style={{ fontSize: '11px', color: '#ef4444' }}>Package does not exist in registry</span>
+                ) : (
+                  <>
+                    {dep.flags.slice(0, 3).map(f => <FlagPill key={f.type} flag={f} />)}
+                    {dep.flags.length > 3 && <span style={{ fontSize: '11px', color: '#64748b' }}>+{dep.flags.length - 3} more</span>}
+                  </>
+                )}
               </div>
             </div>
 
@@ -142,6 +179,21 @@ export default function DependencyTable({ dependencies }: Props) {
             {isExpanded && (
               <div style={{ background: '#0a0c10', borderTop: '1px solid #1e2130', padding: '16px 24px', animation: 'expandIn 0.15s ease' }}>
                 <style>{`@keyframes expandIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+
+                {/* Not-found state */}
+                {dep.registryData.notFound ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 16px', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <div>
+                      <p style={{ fontSize: '13px', fontWeight: 700, color: '#ef4444', marginBottom: '2px' }}>Package not found in registry</p>
+                      <p style={{ fontSize: '12px', color: '#64748b' }}>
+                        <span style={{ fontFamily: "'Fira Code', monospace", color: '#94a3b8' }}>{dep.name}</span> could not be found. It may be a private package, a typo, or was removed from the registry.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '24px' }}>
                   {/* Metrics */}
                   <div>
@@ -158,6 +210,24 @@ export default function DependencyTable({ dependencies }: Props) {
                     <InfoRow label="Last Publish" value={new Date(dep.registryData.lastPublish).toLocaleDateString()} />
                     <InfoRow label="Versions" value={dep.registryData.versions} />
                     <InfoRow label="License" value={dep.registryData.license} />
+                    {dep.registryData.maintainerNames?.length > 0 ? (
+                      <div style={{ marginBottom: '6px' }}>
+                        <span style={{ fontSize: '12px', color: '#64748b' }}>
+                          {dep.registryData.maintainerNames.length === 1 ? 'Maintainer' : 'Maintainers'}
+                        </span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', marginTop: '4px' }}>
+                          {dep.registryData.maintainerNames.map(m => (
+                            <span key={m} style={{
+                              fontSize: '11px', color: '#94a3b8',
+                              background: '#1e2130', borderRadius: '4px',
+                              padding: '1px 6px', fontFamily: "'Fira Code', monospace",
+                            }}>{m}</span>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <InfoRow label="Maintainers" value={dep.registryData.maintainers} />
+                    )}
                     {dep.registryData.deprecation && <InfoRow label="Deprecated" value={dep.registryData.deprecation} highlight />}
                     {dep.github && (
                       <>
@@ -196,6 +266,7 @@ export default function DependencyTable({ dependencies }: Props) {
                     )}
                   </div>
                 </div>
+                )} {/* end notFound else */}
               </div>
             )}
           </div>

@@ -71,6 +71,12 @@ export async function fetchNpmMetadata(name: string, version: string): Promise<{
   };
   try {
     const data = await httpsGet(`https://registry.npmjs.org/${encodeURIComponent(name)}`);
+
+    // npm returns {"error":"Not found"} for unknown packages
+    if (data.error || !data['dist-tags']) {
+      return { registry: { ...defaultRegistry, notFound: true }, githubUrl: null, vulnerabilities: [], directDeps: [] };
+    }
+
     const latest = data['dist-tags']?.latest || version;
     const versionData = data.versions?.[latest] || {};
     const times = data.time || {};

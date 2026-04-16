@@ -33,7 +33,7 @@ export async function fetchMavenMetadata(groupId: string, artifactId: string): P
     const url = `https://search.maven.org/solrsearch/select?q=${query}&rows=20&wt=json`;
     const data = await httpsGet(url);
     const docs = data.response?.docs || [];
-    if (docs.length === 0) return { registry: defaultRegistry, githubUrl: null };
+    if (docs.length === 0) return { registry: { ...defaultRegistry, notFound: true }, githubUrl: null };
 
     const latest = docs[0];
     const allVersions = docs.filter((d: any) => d.id.startsWith(`${groupId}:${artifactId}`));
