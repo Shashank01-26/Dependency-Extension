@@ -34,11 +34,23 @@ const RISK_BG: Record<RiskLevel, string> = {
 };
 
 
+export type AiInsightsStatus = 'idle' | 'loading' | 'ready' | 'error';
+
+export interface AiInsightsData {
+  summary: string;
+  riskAnalysis: string;
+  recommendations: string;
+  alternatives: string;
+}
+
 export default function App() {
   const [result, setResult] = useState<ScanResult | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('table');
   const [loading, setLoading] = useState(false);
   const [intercept, setIntercept] = useState<InterceptState>(null);
+  const [aiInsights, setAiInsights] = useState<AiInsightsData | null>(null);
+  const [aiStatus, setAiStatus] = useState<AiInsightsStatus>('idle');
+  const [aiError, setAiError] = useState<string | null>(null);
 
   // Tell the extension the webview is ready to receive messages.
   // This triggers a replay of any interceptStart/interceptReady that was sent
@@ -53,8 +65,20 @@ export default function App() {
       if (message.type === 'setResult') {
         setResult(message.result);
         setLoading(false);
+        // Reset AI insights whenever a new scan result arrives
+        setAiInsights(null);
+        setAiStatus('idle');
+        setAiError(null);
       } else if (message.type === 'loading') {
         setLoading(true);
+      } else if (message.type === 'insightsLoading') {
+        setAiStatus('loading');
+      } else if (message.type === 'insightsResult') {
+        setAiInsights(message.insights as AiInsightsData);
+        setAiStatus('ready');
+      } else if (message.type === 'insightsError') {
+        setAiStatus('error');
+        setAiError(message.code === 'no_api_key' ? 'no_api_key' : (message.message || 'Unknown error'));
       } else if (message.type === 'interceptStart') {
         setIntercept({ stage: 'analyzing', pkg: message.package });
       } else if (message.type === 'interceptReady') {
@@ -157,7 +181,15 @@ export default function App() {
             <div style={{ paddingTop: '16px', transition: 'opacity 0.2s ease' }}>
               {activeTab === 'table' && <DependencyTable dependencies={result.dependencies} />}
               {activeTab === 'graph' && <DependencyGraph dependencies={result.dependencies} />}
-              {activeTab === 'insights' && <InsightsPanel result={result} vscode={vscode} />}
+              {activeTab === 'insights' && (
+                <InsightsPanel
+                  result={result}
+                  vscode={vscode}
+                  aiInsights={aiInsights}
+                  aiStatus={aiStatus}
+                  aiError={aiError}
+                />
+              )}
             </div>
           </>
         )}
