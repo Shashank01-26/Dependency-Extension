@@ -1,0 +1,43 @@
+# ── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Secrets / env ─────────────────────────────────────────────────────────────
+.env
+.env.*
+*.pem
+*.key
+secrets.json
+
+# ── Node / VS Code extension ──────────────────────────────────────────────────
+node_modules/
+depscope-vscode/node_modules/
+depscope-core/node_modules/
+
+# ── VS Code extension build outputs ──────────────────────────────────────────
+depscope-vscode/dist/
+depscope-vscode/*.vsix
+
+# ── depscope-core build outputs ───────────────────────────────────────────────
+depscope-core/dist/
+
+# ── IntelliJ / Gradle ────────────────────────────────────────────────────────
+depscope-intellij/.gradle/
+depscope-intellij/build/
+depscope-intellij/*.zip
+depscope-intellij/local.properties
+
+# Bundled Node.js resources (generated at build time, not source)
+depscope-intellij/src/main/resources/depscope-core/
+depscope-intellij/src/main/resources/scripts/intercept-helper.js
+depscope-intellij/src/main/resources/scripts/depscope-wrapper.sh
+depscope-intellij/src/main/resources/webview/
+
+# ── IDE settings ─────────────────────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/settings.json
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*

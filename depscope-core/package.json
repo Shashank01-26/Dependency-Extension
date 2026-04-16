@@ -1,0 +1,22 @@
+{
+  "name": "depscope-core",
+  "version": "1.0.0",
+  "description": "Shared dependency risk analysis engine for DepScope IDE extensions",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "depscope-core": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "@types/node": "^20.12.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

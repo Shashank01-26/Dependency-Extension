@@ -1,0 +1,176 @@
+{
+  "name": "depscope",
+  "displayName": "DepScope — Dependency Risk Analyzer",
+  "description": "Analyze the health, security, and maintenance risk of your project's dependencies directly in VS Code",
+  "version": "1.0.0",
+  "publisher": "depscope",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Linters", "Other"],
+  "keywords": ["dependencies", "security", "npm", "flutter", "android", "risk"],
+  "activationEvents": [
+    "onStartupFinished",
+    "workspaceContains:**/package.json",
+    "workspaceContains:**/pubspec.yaml",
+    "workspaceContains:**/build.gradle",
+    "workspaceContains:**/build.gradle.kts"
+  ],
+  "main": "./dist/extension.js",
+  "icon": "media/icon.png",
+  "contributes": {
+    "commands": [
+      { "command": "depscope.analyze", "title": "DepScope: Analyze Dependencies", "icon": "$(shield)" },
+      { "command": "depscope.analyzeFile", "title": "DepScope: Analyze This File", "icon": "$(shield)" },
+      { "command": "depscope.openDashboard", "title": "DepScope: Open Dashboard", "icon": "$(graph)" },
+      { "command": "depscope.exportJson", "title": "DepScope: Export as JSON" },
+      { "command": "depscope.exportCsv", "title": "DepScope: Export as CSV" },
+      { "command": "depscope.refresh", "title": "Refresh", "icon": "$(refresh)" },
+      { "command": "depscope.loadSample", "title": "DepScope: Load Sample Data" }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "depscope-sidebar",
+          "title": "DepScope",
+          "icon": "media/depscope-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "depscope-sidebar": [
+        {
+          "id": "depscopeTree",
+          "name": "Dependencies",
+          "type": "tree"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "depscope.analyze",
+          "when": "view == depscopeTree",
+          "group": "navigation"
+        },
+        {
+          "command": "depscope.refresh",
+          "when": "view == depscopeTree",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "depscope.analyzeFile",
+          "when": "resourceFilename =~ /^(package\\.json|pubspec\\.yaml|build\\.gradle(\\.kts)?)$/",
+          "group": "depscope"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "depscope.analyzeFile",
+          "when": "resourceFilename =~ /^(package\\.json|pubspec\\.yaml|build\\.gradle(\\.kts)?)$/",
+          "group": "depscope"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "DepScope",
+      "properties": {
+        "depscope.groqApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Groq API key for AI-powered insights (llama-3.3-70b-versatile)",
+          "markdownDescription": "Groq API key for AI-powered insights. Get one free at https://console.groq.com"
+        },
+        "depscope.githubToken": {
+          "type": "string",
+          "default": "",
+          "description": "GitHub personal access token for higher API rate limits"
+        },
+        "depscope.maxDepth": {
+          "type": "number",
+          "default": 3,
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Maximum dependency tree depth to analyze"
+        },
+        "depscope.concurrency": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 20,
+          "description": "Number of parallel dependency analysis requests"
+        },
+        "depscope.autoAnalyzeOnOpen": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically analyze dependencies when a workspace is opened"
+        },
+        "depscope.showCodeLens": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show risk badge CodeLens annotations in manifest files"
+        },
+        "depscope.interceptInstalls": {
+          "type": "boolean",
+          "default": true,
+          "description": "Intercept package-manager install commands and run DepScope analysis before the install proceeds"
+        },
+        "depscope.autoProceedBelowRisk": {
+          "type": "string",
+          "default": "low",
+          "enum": ["low", "medium", "high"],
+          "enumDescriptions": [
+            "Only auto-proceed when risk is low; prompt for medium, high, and critical",
+            "Auto-proceed for low and medium; prompt for high and critical",
+            "Auto-proceed for low, medium, and high; prompt only for critical"
+          ],
+          "description": "Risk level at or below which installs proceed automatically with a notification (no prompt)"
+        }
+      }
+    },
+    "languages": [
+      {
+        "id": "jsonc",
+        "filenames": ["package.json"]
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "npm run build:ext && npm run build:webview",
+    "build:ext": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
+    "build:webview": "esbuild src/webview/index.tsx --bundle --outfile=dist/webview.js --format=iife --platform=browser --loader:.tsx=tsx --loader:.ts=ts --define:process.env.NODE_ENV='\"production\"' --minify",
+    "watch": "npm run build -- --watch",
+    "watch:ext": "npm run build:ext -- --watch",
+    "watch:webview": "npm run build:webview -- --watch",
+    "package": "vsce package",
+    "test": "jest"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testMatch": ["**/src/test/**/*.test.ts"],
+    "moduleFileExtensions": ["ts", "js"],
+    "globals": {
+      "ts-jest": {
+        "tsconfig": "tsconfig.json"
+      }
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.21.0",
+    "typescript": "^5.4.5",
+    "@vscode/vsce": "^2.26.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.5",
+    "@types/jest": "^29.5.12"
+  },
+  "dependencies": {
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
+  }
+}

@@ -1,0 +1,13 @@
+<idea-plugin>
+    <!--
+        Optional extensions that require the bundled Terminal plugin.
+        Loaded only when org.intellij.plugins.terminal is present (always true
+        for IntelliJ IDEA 2024.1+; may be absent in lightweight IDEs).
+    -->
+    <extensions defaultExtensionNs="org.jetbrains.plugins.terminal">
+        <localTerminalCustomizer
+            implementation="com.depscope.DepScopeTerminalCustomizer"
+            order="last"
+        />
+    </extensions>
+</idea-plugin>
