@@ -2,7 +2,7 @@
   "name": "depscope-risk-analyzer",
   "displayName": "DepScope — Dependency Risk & Security Scanner",
   "description": "Analyze the health, security, and maintenance risk of your project's dependencies directly in VS Code",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "publisher": "shashank-dev",
   "engines": { "vscode": "^1.85.0" },
   "categories": ["Linters", "Other"],

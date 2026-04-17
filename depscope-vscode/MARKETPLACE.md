@@ -2,75 +2,102 @@
 
 **Know the risk before you install.**
 
-DepScope analyzes the health, security, and maintenance status of your project's dependencies — directly inside VS Code, before a single package touches your project.
+DepScope is a VS Code extension that analyzes the health, security, and maintenance status of your project's dependencies — right inside your editor, before any package touches your project.
+
+---
+
+## What Is DepScope?
+
+Modern projects pull in hundreds of dependencies, and any one of them can introduce security vulnerabilities, maintenance debt, or hidden complexity. DepScope gives you a clear risk picture of every package you depend on — without leaving VS Code.
+
+It intercepts package install commands in real time, runs a multi-dimensional analysis, and lets you decide whether to proceed — all before a single file is written to your project.
 
 Supports **npm** (package.json), **Flutter/Dart** (pubspec.yaml), and **Android/Java** (build.gradle).
 
 ---
 
-## Install Interception
+## What Does It Do?
 
-When you run `npm install`, `yarn add`, `pnpm add`, or `flutter pub add` inside a VS Code terminal, DepScope automatically:
+### Install Interception
+
+When you run `npm install`, `yarn add`, `pnpm add`, or `flutter pub add` inside the VS Code terminal, DepScope automatically:
 
 1. **Blocks** the installation
 2. **Analyzes** the package in real time
-3. **Shows** a risk report in the dashboard
-4. **Asks** you to Continue or Cancel the install
+3. **Shows** a full risk report in the dashboard
+4. **Asks** you to Continue or Cancel
 
-No package hits your project until you approve it.
+No package is written to your project until you approve it.
 
----
+### Risk Scoring
 
-## Features
+Every package receives a composite **0–100 risk score** built from five weighted dimensions:
 
-- **Risk Scoring** — Composite 0–100 score per package across 5 weighted dimensions:
-  - Security (30%): known CVEs and vulnerability severity
-  - Maintenance (25%): last publish date, deprecation, version frequency
-  - Community (15%): maintainer count, open issue ratio, commit recency
-  - Popularity (15%): weekly downloads, GitHub stars
-  - Depth (15%): transitive dependency chain depth and size
+| Dimension | Weight | What It Measures |
+|-----------|--------|-----------------|
+| Security | 30% | Known CVEs, vulnerability severity |
+| Maintenance | 25% | Last publish date, deprecation, version frequency |
+| Community | 15% | Maintainer count, open issue ratio, commit recency |
+| Popularity | 15% | Weekly downloads, GitHub stars |
+| Depth | 15% | Transitive dependency chain depth and size |
 
-- **Risk Flags** — Instant warnings for `deprecated`, `unmaintained`, `stale`, `vulnerable`, `low-popularity`, `single-maintainer`, `deep-chain`, `archived`
+### Risk Levels
 
-- **Interactive Dashboard** — Score ring, stat cards, sortable/filterable dependency table, dependency graph, and AI-powered insights
-
-- **CodeLens Badges** — Inline risk indicators next to each dependency in your manifest files
-
-- **Diagnostics** — Red/yellow squiggles for critical/high risk packages directly in the editor
-
-- **Sidebar Tree View** — All dependencies grouped by risk level
-
-- **Status Bar** — Live overall risk score in the editor footer
-
-- **AI Insights** — Powered by Groq (llama-3.3-70b-versatile); falls back to rule-based analysis if no key is configured
-
-- **Export** — Download full reports as JSON or CSV
-
----
-
-## Supported Package Managers
-
-| Command | Ecosystem |
-|---------|-----------|
-| `npm install` / `npm add` | Node.js |
-| `yarn add` | Node.js |
-| `pnpm add` / `pnpm install` | Node.js |
-| `flutter pub add` | Flutter/Dart |
-
----
-
-## Risk Levels
-
-| Score | Level | Meaning |
-|-------|-------|---------|
+| Score | Level | What It Means |
+|-------|-------|---------------|
 | 70–100 | CRITICAL | Immediate action required |
 | 45–69 | HIGH | Address soon |
 | 25–44 | MEDIUM | Monitor and plan upgrades |
 | 0–24 | LOW | Healthy dependency |
 
+### Risk Flags
+
+Instant warnings are surfaced for packages flagged as: `deprecated`, `unmaintained`, `stale`, `vulnerable`, `low-popularity`, `single-maintainer`, `deep-chain`, or `archived`.
+
+### Interactive Dashboard
+
+- Score ring and stat cards for a quick health overview
+- Sortable and filterable dependency table
+- Visual dependency graph
+- AI-powered insights (via Groq)
+
+### Editor Integration
+
+- **CodeLens Badges** — Inline risk indicators next to each dependency in your manifest files
+- **Diagnostics** — Red/yellow squiggles for critical/high risk packages directly in the editor
+- **Sidebar Tree View** — All dependencies grouped by risk level
+- **Status Bar** — Live overall risk score in the editor footer
+
+### Export
+
+Download full dependency reports as **JSON** or **CSV** for audits or team reviews.
+
 ---
 
-## Settings
+## How to Set Up and Use It
+
+### 1. Install the Extension
+
+Search for **DepScope** in the VS Code Extensions Marketplace and click Install.
+
+### 2. Open a Project
+
+Open any project containing a `package.json`, `pubspec.yaml`, or `build.gradle` file. DepScope will automatically analyze dependencies when the workspace opens.
+
+### 3. Analyze Your Dependencies
+
+You can trigger analysis at any time using:
+
+| Command | How to Trigger |
+|---------|----------------|
+| DepScope: Analyze Dependencies | Command Palette or Activity Bar |
+| DepScope: Analyze This File | Right-click any manifest file |
+| DepScope: Open Dashboard | Command Palette |
+| DepScope: Load Sample Data | Command Palette — no project needed |
+| DepScope: Export as JSON | Command Palette or Dashboard |
+| DepScope: Export as CSV | Command Palette or Dashboard |
+
+### 4. Configure Settings (Optional)
 
 | Setting | Default | Description |
 |---------|---------|-------------|
@@ -83,27 +110,25 @@ No package hits your project until you approve it.
 | `depscope.autoAnalyzeOnOpen` | `true` | Auto-analyze when a workspace opens |
 | `depscope.showCodeLens` | `true` | Show inline risk badges in manifest files |
 
----
+### 5. Get API Keys (Optional but Recommended)
 
-## Commands
-
-| Command | How to trigger |
-|---------|---------------|
-| DepScope: Analyze Dependencies | Command Palette / Activity Bar |
-| DepScope: Analyze This File | Right-click any manifest file |
-| DepScope: Open Dashboard | Command Palette |
-| DepScope: Load Sample Data | Command Palette — no project needed |
-| DepScope: Export as JSON | Command Palette / Dashboard |
-| DepScope: Export as CSV | Command Palette / Dashboard |
-
----
-
-## Getting API Keys (optional)
-
-| Key | Where to get it |
+| Key | Where to Get It |
 |-----|----------------|
-| Groq API Key | [console.groq.com](https://console.groq.com) — free |
-| GitHub Token | GitHub → Settings → Developer settings → Personal access tokens |
+| **Groq API Key** | [console.groq.com](https://console.groq.com) — free tier available; enables AI-powered insights |
+| **GitHub Token** | GitHub → Settings → Developer Settings → Personal Access Tokens; increases rate limits from 60 to 5,000 requests/hr |
+
+If no Groq key is configured, DepScope falls back to rule-based analysis automatically.
+
+---
+
+## Supported Package Managers
+
+| Command | Ecosystem |
+|---------|-----------|
+| `npm install` / `npm add` | Node.js |
+| `yarn add` | Node.js |
+| `pnpm add` / `pnpm install` | Node.js |
+| `flutter pub add` | Flutter/Dart |
 
 ---
 
